@@ -125,8 +125,8 @@ def get_jobs_data():
       jobs_info['skills'] = skills
       jobs_info['roles'] = roles
       consolidated_jobs_data.append(jobs_info)
-    consolidated_jobs_data.append(jobs_roles_count)
-    consolidated_jobs_data.append(jobs_skills_count)
+  consolidated_jobs_data.append(jobs_roles_count)
+  consolidated_jobs_data.append(jobs_skills_count)
 
 
       
@@ -136,7 +136,7 @@ def get_jobs_data():
 #company basic infos
 while batch_count < max_batch:
   #get cmpy info
-  #get_cmpy_data(consolidated_cmpy_data)
+  get_cmpy_data(consolidated_cmpy_data)
   batch_count = batch_count + 1
 
 #jobs info
@@ -149,5 +149,5 @@ pretty_result = json.dump(consolidated_cmpy_data, outfile)
 outfile.flush()
 outfile.close()
 """
-pretty_result = json.dumps(consolidated_jobs_data, sort_keys=True, indent=2)
+pretty_result = json.dumps(consolidated_cmpy_data, sort_keys=True, indent=2)
 print(pretty_result)
