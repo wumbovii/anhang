@@ -4,16 +4,12 @@ import re
 import json
 import ast
 
-LOCATIONS = ['California']
-JOBS = ['engineer', 'product+manager']
-JOB_CATEGORIES = ['Employer Name', 'Start Date', 'City of Job Location', 'Job Title',
-'State of Job Location', 'Prevailing Wage Rate', 'Wage Unit']
-
+JOB_QUERY_TO_NAME = {'software+engineer':'softwarejobs',
+		'product+manager':'pmjobs',
+		'sales':'salesjobs',
+		'marketing':'marketingjobs'}
 BASE_URL = 'http://www.salar.ly'
 JOBS_URL = 'http://www.salar.ly/salaries/?'
-CUR_JOB = 'marketing'
-
-jobstr = []
 
 def scrape_job_record(job_path):
 	req_obj = urllib2.urlopen(BASE_URL + job_path).read()
@@ -51,34 +47,71 @@ def scrape_job_record(job_path):
 	jobs_list.append(job_json)
 
 
+def clean_print_output(jobstr, current_job):
+
+	jobstr = ','.join(jobstr)
+	joblist = '[' + jobstr + ']'
+	
+	joblist = re.sub('"', '\'', joblist)
+	joblist = re.sub('{\'', '{"', joblist)
+	joblist = re.sub('\':', '":', joblist)
+	joblist = re.sub('": \'', '": "', joblist)
+	joblist = re.sub('\',', '",', joblist)
+	joblist = re.sub(', \'', ', "', joblist)
+	joblist = re.sub('\'}', '"}', joblist)
+	print('Output = ' + joblist)
+
+	outfile = open('salarly_' +  JOB_QUERY_TO_NAME[current_job] + '.json', 'ab+')
+	jsonobj = json.loads(joblist)
+	pretty_result = json.dump(jsonobj, outfile, sort_keys=True, indent=2)
+	outfile.flush()
+	outfile.close()
+
 def scrape_top_level():
 	#pages
-	eng_pages = range(35,71)
-	pm_pages = range(1,7)
-	sales_pages = range(1,11)
-	marketing_pages = range(1,12)
+	def create_page_ranges():
+		eng_pages = range(1,71)
+		pm_pages = range(1,7)
+		sales_pages = range(1,11)
+		marketing_pages = range(1,12)
+		jobpages = {}
+		jobpages['software+engineer'] = eng_pages
+		jobpages['product+manager'] = pm_pages
+		jobpages['sales'] = sales_pages
+		jobpages['marketing'] = marketing_pages
+		return jobpages
+
 	def create_page_append(page):
 		return '&page=' + str(page)
 
 	def create_title_append(title):
 		return '&title=' + title	
 
-	for page in marketing_pages:
-		#get the url for job urls
-		req_obj = urllib2.urlopen(JOBS_URL + create_title_append(CUR_JOB
-			+ create_page_append(page)) ).read()
-		if not req_obj:
-			continue
+	jobpages = create_page_ranges()
+	for entry in jobpages:
+		CUR_JOB = entry
+		pages = jobpages[CUR_JOB]
+		print('Querying for ' + CUR_JOB)
+		jobstr = []
+		for page in pages:
+			#get the url for job urls
+			req_obj = urllib2.urlopen(JOBS_URL + create_title_append(CUR_JOB)
+				+ create_page_append(page) ).read()
+			if not req_obj:
+				continue
 
-		#soupify!
-		soup = BeautifulSoup(req_obj)
-		if not soup:
-			continue
+			#soupify!
+			soup = BeautifulSoup(req_obj)
+			if not soup:
+				continue
 
-		tooltip = re.search('\[\{.*\}\];',soup.get_text()).group(0)
-		jinfo = str(tooltip)[1:len(tooltip)-2]
-		jobstr.append(jinfo)
+			#obtain embedded json
+			tooltip = re.search('\[\{.*\}\];',soup.get_text()).group(0)
+			jinfo = str(tooltip)[1:len(tooltip)-2]
+			jobstr.append(jinfo)
 
+		#clean output and write
+		clean_print_output(jobstr, CUR_JOB)
 
 		
 
@@ -96,21 +129,5 @@ def scrape_top_level():
 scrape_top_level()
 
 
-jobstr = ','.join(jobstr)
-joblist = '[' + jobstr + ']'
 
-joblist = re.sub('"', '\'', joblist)
-joblist = re.sub('{\'', '{"', joblist)
-joblist = re.sub('\':', '":', joblist)
-joblist = re.sub('": \'', '": "', joblist)
-joblist = re.sub('\',', '",', joblist)
-joblist = re.sub(', \'', ', "', joblist)
-joblist = re.sub('\'}', '"}', joblist)
-##oblist = json.JSONDecoder().decode(joblist)
-
-
-
-jsonobj = json.loads(joblist)
-pretty_result = json.dumps(jsonobj, sort_keys=True, indent=2)
-print(pretty_result)
 
