@@ -7,7 +7,10 @@ import ast
 JOB_QUERY_TO_NAME = {'software+engineer':'softwarejobs',
 		'product+manager':'pmjobs',
 		'sales':'salesjobs',
-		'marketing':'marketingjobs'}
+		'marketing':'marketingjobs',
+		'manager':'managerjobs',
+		'director':'directorjobs'
+		}
 BASE_URL = 'http://www.salar.ly'
 JOBS_URL = 'http://www.salar.ly/salaries/?'
 
@@ -59,26 +62,37 @@ def clean_print_output(jobstr, current_job):
 	joblist = re.sub('\',', '",', joblist)
 	joblist = re.sub(', \'', ', "', joblist)
 	joblist = re.sub('\'}', '"}', joblist)
+	#special cases
+	joblist = re.sub('kor"', 'kor\'', joblist)
 	print('Output = ' + joblist)
+	#print joblist
 
 	outfile = open('salarly_' +  JOB_QUERY_TO_NAME[current_job] + '.json', 'ab+')
 	jsonobj = json.loads(joblist)
-	pretty_result = json.dump(jsonobj, outfile, sort_keys=True, indent=2)
+	pretty_result = json.dump(jsonobj, outfile, sort_keys=True)
 	outfile.flush()
 	outfile.close()
 
 def scrape_top_level():
 	#pages
 	def create_page_ranges():
+
 		eng_pages = range(1,71)
 		pm_pages = range(1,7)
 		sales_pages = range(1,11)
 		marketing_pages = range(1,12)
+
+		manager_pages = range(1,70)
+		director_pages = range(1,21)
 		jobpages = {}
+
 		jobpages['software+engineer'] = eng_pages
 		jobpages['product+manager'] = pm_pages
 		jobpages['sales'] = sales_pages
 		jobpages['marketing'] = marketing_pages
+
+		jobpages['manager'] = manager_pages
+		jobpages['director'] = director_pages
 		return jobpages
 
 	def create_page_append(page):
